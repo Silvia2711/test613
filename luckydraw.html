@@ -184,22 +184,8 @@
     const popupBall = document.getElementById('popup-ball');
     const popupText = document.getElementById('popup-text');
     const machine = document.getElementById('machine');
-    const drawBtn = document.getElementById('drawBtn');
 
-    const storedResult = localStorage.getItem('gachaResult');
-    if (storedResult) {
-      const [storedEmail, storedPrize, storedColor] = storedResult.split('|');
-      if (storedEmail === email) {
-        result.textContent = storedPrize;
-        drawBtn.disabled = true;
-        gachaBall.style.backgroundColor = storedColor;
-        gachaBall.style.opacity = '1';
-        gachaBall.classList.add('show-ball');
-        const li = document.createElement('li');
-        li.textContent = `${maskEmail(email)}：${storedPrize}`;
-        logList.prepend(li);
-      }
-    }
+    let hasDrawn = false;
 
     function maskEmail(email) {
       const [user, domain] = email.split('@');
@@ -222,13 +208,14 @@
     }
 
     function spinGacha() {
-      if (drawBtn.disabled) {
+      if (hasDrawn) {
         alert('你已經抽過囉！');
         return;
       }
-
-      drawBtn.disabled = true;
+      hasDrawn = true;
+      document.getElementById('drawBtn').disabled = true;
       result.textContent = '';
+
       machine.style.animation = 'none';
 
       const roll = Math.random();
@@ -259,13 +246,12 @@
       gachaBall.classList.add('show-ball');
 
       result.textContent = prize;
+
       showPopup(color, prize);
 
       const li = document.createElement('li');
       li.textContent = `${maskEmail(email)}：${prize}`;
       logList.prepend(li);
-
-      localStorage.setItem('gachaResult', `${email}|${prize}|${color}`);
     }
   </script>
 </body>
