@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>扭蛋抽獎機</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background-color: #fef9f4;
+      padding: 60px;
+    }
+    h1 {
+      color: #ff6f61;
+    }
+    #emailDisplay {
+      font-size: 18px;
+      margin-bottom: 40px;
+      color: #555;
+    }
+    .banner {
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto 40px;
+      position: relative;
+      animation: shakeMachine 3s ease-in-out infinite;
+    }
+    .banner img {
+      width: 100%;
+      height: auto;
+      border-radius: 10px;
+    }
+    #gacha-ball {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      position: absolute;
+      bottom: 80px;
+      right: 160px;
+      transform: scale(0);
+      opacity: 0;
+      z-index: 10;
+      transition: transform 0.6s ease, opacity 0.6s ease;
+    }
+    .show-ball {
+      animation: slideOut 1s ease-out forwards;
+    }
+    @keyframes slideOut {
+      0% { transform: scale(0); opacity: 0; }
+      50% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes shakeMachine {
+      0% { transform: rotate(0deg); }
+      25% { transform: rotate(1deg); }
+      50% { transform: rotate(-1deg); }
+      75% { transform: rotate(1deg); }
+      100% { transform: rotate(0deg); }
+    }
+    #popup {
+      position: fixed;
+      top: 20%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      padding: 20px;
+      z-index: 1000;
+      display: none;
+      width: 280px;
+    }
+    #popup img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      margin-bottom: 10px;
+    }
+    #popup h3 {
+      margin: 10px 0 5px;
+    }
+    #result {
+      font-size: 24px;
+      margin-top: 20px;
+      font-weight: bold;
+      color: #333;
+    }
+    #prize-list {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin: 16px auto 32px;
+      font-size: 16px;
+    }
+    .prize-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    #history {
+      margin-top: 40px;
+      font-size: 16px;
+      color: #777;
+    }
+    #history ul {
+      list-style-type: none;
+      padding-left: 0;
+    }
+    #history li {
+      margin-bottom: 8px;
+    }
+    button {
+      font-size: 20px;
+      padding: 14px 28px;
+      border-radius: 10px;
+      border: none;
+      background-color: #f48fb1;
+      color: white;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    #fireworks {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      background: transparent;
+      z-index: 999;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎊 扭蛋抽抽樂！</h1>
+  <div class="banner" id="machine">
+    <img src="https://i.ibb.co/sddpgz1x/image.png" alt="主視覺設計">
+    <div id="gacha-ball"></div>
+  </div>
+  <div id="emailDisplay">參與者：檢查中...</div>
+  <button id="drawBtn" onclick="spinGacha()">🎯 抽一顆扭蛋！</button>
+
+  <div id="prize-list">
+    <div class="prize-item"><span style="color:#ffd54f;">🟡</span>500元</div>
+    <div class="prize-item"><span style="color:#81c784;">🟢</span>200元</div>
+    <div class="prize-item"><span style="color:#e57373;">🔴</span>共辜</div>
+  </div>
+
+  <div id="result"></div>
+
+  <div id="history">
+    <h3>近期中獎紀錄</h3>
+    <ul id="logList"></ul>
+  </div>
+  <div id="fireworks"></div>
+  <div id="popup">
+    <img id="popup-ball" src="" alt="扭蛋結果">
+    <h3 id="popup-text"></h3>
+  </div>
+
+  <audio id="winSound">
+    <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_d9b25e8b2a.mp3?filename=success-1-6297.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="failSound">
+    <source src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_154c3ee79a.mp3?filename=lose-1-5713.mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+    const email = new URLSearchParams(window.location.search).get('email') || '未知';
+    document.getElementById('emailDisplay').textContent = `參與者：${email}`;
+
+    const gachaBall = document.getElementById('gacha-ball');
+    const result = document.getElementById('result');
+    const logList = document.getElementById('logList');
+    const winSound = document.getElementById('winSound');
+    const failSound = document.getElementById('failSound');
+    const fireworks = document.getElementById('fireworks');
+    const popup = document.getElementById('popup');
+    const popupBall = document.getElementById('popup-ball');
+    const popupText = document.getElementById('popup-text');
+    const machine = document.getElementById('machine');
+
+    let hasDrawn = false;
+
+    function maskEmail(email) {
+      const [user, domain] = email.split('@');
+      return user.slice(0, 2) + '***@' + domain;
+    }
+
+    function showFireworks() {
+      fireworks.style.display = 'block';
+      fireworks.innerHTML = '<iframe src="https://giphy.com/embed/3o7abB06u9bNzA8lu8" width="100%" height="100%" frameBorder="0" class="giphy-embed" allowFullScreen></iframe>';
+      setTimeout(() => { fireworks.innerHTML = ''; fireworks.style.display = 'none'; }, 3000);
+    }
+
+    function showPopup(color, prizeText) {
+      setTimeout(() => {
+        popupBall.style.backgroundColor = color;
+        popupBall.src = "https://dummyimage.com/80x80/" + color.replace('#','') + "/ffffff.png&text=+";
+        popupText.textContent = prizeText;
+        popup.style.display = 'block';
+      }, 1000);
+    }
+
+    function spinGacha() {
+      if (hasDrawn) {
+        alert('你已經抽過囉！');
+        return;
+      }
+      hasDrawn = true;
+      document.getElementById('drawBtn').disabled = true;
+      result.textContent = '';
+
+      machine.style.animation = 'none';
+
+      const roll = Math.random();
+      let prize = '';
+      let color = '';
+
+      if (roll < 0.01) {
+        prize = '🎊 恭喜中 500 元超值禮券！';
+        color = '#ffd54f';
+        result.style.color = '#d32f2f';
+        winSound.play();
+        showFireworks();
+      } else if (roll < 0.035) {
+        prize = '🎁 恭喜中 200 元折扣碼！';
+        color = '#81c784';
+        result.style.color = '#388e3c';
+        winSound.play();
+        showFireworks();
+      } else {
+        prize = '🙏 共辜一場～沒關係下次再來！';
+        color = '#e57373';
+        result.style.color = '#666';
+        failSound.play();
+      }
+
+      gachaBall.style.backgroundColor = color;
+      gachaBall.style.opacity = '1';
+      gachaBall.classList.add('show-ball');
+
+      result.textContent = prize;
+
+      showPopup(color, prize);
+
+      const li = document.createElement('li');
+      li.textContent = `${maskEmail(email)}：${prize}`;
+      logList.prepend(li);
+    }
+  </script>
+</body>
+</html>
