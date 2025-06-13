@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>限時動態互動體驗</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 50px; background-color: #fefefe; }
+    h1 { color: #ff6f61; }
+    button { font-size: 18px; margin: 15px; padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer; }
+    button:disabled { background-color: #ccc; cursor: not-allowed; }
+    #pretestBtn { background-color: #ffb347; }
+    #officialBtn { background-color: #6ec6ff; }
+  </style>
+</head>
+<body>
+  <h1>🔓 解鎖你的限時動態互動體驗！</h1>
+  <p id="status">驗證中...</p>
+  <button id="pretestBtn" disabled onclick="location.href='https://your-pretest-url.com'">照片吐槽</button>
+  <button id="officialBtn" disabled onclick="location.href='https://your-lottery-url.com'">抽獎囉！</button>
+
+  <script>
+    // 模擬後端資料
+    const accessTable = {
+      'test1@gmail.com': { pretest: true, official: false },
+      'test2@gmail.com': { pretest: true, official: true },
+      'test3@gmail.com': { pretest: false, official: true },
+    };
+
+    // 抓網址參數 email
+    function getQueryParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param);
+    }
+
+    const email = getQueryParam('email');
+    const statusEl = document.getElementById('status');
+
+    if (!email || !accessTable[email]) {
+      statusEl.textContent = '⚠️ 找不到你的驗證資料喔，請確認你有填寫問卷！';
+    } else {
+      const access = accessTable[email];
+      statusEl.textContent = `✅ ${email} 驗證成功！`;
+
+      if (access.pretest) {
+        document.getElementById('pretestBtn').disabled = false;
+      }
+      if (access.official) {
+        document.getElementById('officialBtn').disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
