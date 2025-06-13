@@ -142,7 +142,6 @@
     <img src="https://i.ibb.co/sddpgz1x/image.png" alt="主視覺設計">
     <div id="gacha-ball"></div>
   </div>
-  <div id="emailDisplay">參與者：檢查中...</div>
   <button id="drawBtn" onclick="spinGacha()">🎯 抽一顆扭蛋！</button>
 
   <div id="prize-list">
@@ -171,8 +170,7 @@
   </audio>
 
   <script>
-    const email = new URLSearchParams(window.location.search).get('email') || '未知';
-    document.getElementById('emailDisplay').textContent = `參與者：${email}`;
+  
 
     const gachaBall = document.getElementById('gacha-ball');
     const result = document.getElementById('result');
